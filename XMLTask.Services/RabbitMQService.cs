@@ -17,7 +17,12 @@ namespace XMLTask.Services
         public RabbitMQService(RabbitMQConfiguration configuration)
         {
             _configuration = configuration;
-            _connnectionFactory = new ConnectionFactory { HostName = _configuration.Host };
+            _connnectionFactory = new ConnectionFactory
+            {
+                HostName = _configuration.Host,
+                UserName = _configuration.UserName,
+                Password = _configuration.Password
+            };
         }
 
         public async Task Connect()

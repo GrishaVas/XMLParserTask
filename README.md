@@ -11,4 +11,4 @@
 
 Connection string для бд устанавливается в appsettings.json XMLTask.DataProcessor в секции : '"ConnectionStrings": "SqliteXMLTaskConnectionString": "{connectoinString}"'
 
-Host и QueueName для RabbitMQ устанавливаются в двух проектах XMLTask.XMLParser, XMLTask.DataProcessor в appsettings.json в секции : "RabbitMQConfiguration": "Host": "{host}, "QueueName": "{queueName}"
+Host и QueueName, UserName и Password для RabbitMQ устанавливаются в двух проектах XMLTask.XMLParser, XMLTask.DataProcessor в appsettings.json в секции : '"RabbitMQConfiguration": "Host": "{host}, "QueueName": "{queueName}, "UserName": "{userName}", "Password": "{password}"'
