@@ -38,6 +38,11 @@ namespace XMLTask.XMLParser.Services
                     throw new ArgumentException($"File '{fileName}' does not exist.");
                 }
 
+                if (Path.GetExtension(fileName) != ".xml")
+                {
+                    throw new ArgumentException($"File '{fileName}' has wrong extension.");
+                }
+
                 using var file = File.OpenRead(fileName);
 
                 _logger.LogInformation($"'{fileName}' file opened.");
