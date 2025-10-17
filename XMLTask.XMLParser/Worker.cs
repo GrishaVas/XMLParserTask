@@ -11,13 +11,22 @@ namespace XMLTask.XMLParser
     {
         private readonly ILogger<Worker> _logger;
         private readonly ParserConfiguration _parserConfiguration;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly RabbitMQService _rabbitMQService;
+        private readonly XMLParserService _xMLParserService;
 
-        public Worker(ILogger<Worker> logger, IOptions<ParserConfiguration> parserConfiguration, IServiceProvider serviceProvider)
+        public Worker(ILogger<Worker> logger, IOptions<ParserConfiguration> parserConfiguration, XMLParserService xMLParserService, RabbitMQService rabbitMQService)
         {
             _logger = logger;
-            _serviceProvider = serviceProvider;
             _parserConfiguration = parserConfiguration.Value;
+            _rabbitMQService = rabbitMQService;
+            _xMLParserService = xMLParserService;
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await _rabbitMQService.Connect();
+
+            await base.StartAsync(cancellationToken);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -26,14 +35,10 @@ namespace XMLTask.XMLParser
             {
                 try
                 {
-                    using var scope = _serviceProvider.CreateScope();
-                    var xmlParserService = scope.ServiceProvider.GetService<XMLParserService>();
-                    var rabbitMQService = scope.ServiceProvider.GetService<RabbitMQService>();
-                    var instrumentStatuses = xmlParserService.GetInstrumentStatuses(_parserConfiguration.XMLsFolder);
+                    var instrumentStatuses = _xMLParserService.GetInstrumentStatuses(_parserConfiguration.XMLsFolder);
 
-                    await rabbitMQService.Connect();
                     _logger.LogInformation($"RabbitMqService connected.");
-                    await sendInstrumentStatuses(rabbitMQService, instrumentStatuses);
+                    await sendInstrumentStatuses(instrumentStatuses);
                 }
                 catch (Exception ex)
                 {
@@ -46,13 +51,13 @@ namespace XMLTask.XMLParser
             }
         }
 
-        private async Task sendInstrumentStatuses(RabbitMQService rabbitMQService, IEnumerable<InstrumentStatus> instrumentStatuses)
+        private async Task sendInstrumentStatuses(IEnumerable<InstrumentStatus> instrumentStatuses)
         {
             foreach (var instrumentStatus in instrumentStatuses)
             {
 
                 updateModuleStates(instrumentStatus);
-                await rabbitMQService.SendInstrumentStatus(instrumentStatus);
+                await _rabbitMQService.SendInstrumentStatus(instrumentStatus);
 
                 _logger.LogInformation($"InstrumentStatus with PackageID = {instrumentStatus.PackageID} sended.");
             }

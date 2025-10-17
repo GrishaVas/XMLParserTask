@@ -10,7 +10,7 @@ builder.Services.AddHostedService<Worker>();
 builder.Services.Configure<RabbitMQConfiguration>(builder.Configuration.GetSection(nameof(RabbitMQConfiguration)));
 builder.Services.AddAutoMapper(conf => conf.AddMaps(typeof(Program).Assembly));
 builder.Services.AddSingleton(sp => new RabbitMQService(sp.GetService<IOptions<RabbitMQConfiguration>>().Value));
-builder.Services.AddDbContext<XMLTaskDbContext>(opts => opts.UseSqlite(builder.Configuration.GetConnectionString("SqliteXMLTaskConnectionString")));
+builder.Services.AddDbContext<XMLTaskDbContext>(opts => opts.UseSqlite(builder.Configuration.GetConnectionString("SqliteXMLTaskConnectionString")), contextLifetime: ServiceLifetime.Transient, optionsLifetime: ServiceLifetime.Transient);
 builder.Services.AddLogging(logging =>
     logging.AddSimpleConsole(options =>
     {

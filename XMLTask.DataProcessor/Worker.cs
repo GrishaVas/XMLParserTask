@@ -11,14 +11,14 @@ namespace XMLTask.DataProcessor
         private readonly ILogger<Worker> _logger;
         private readonly RabbitMQService _rabbitMQService;
         private readonly IMapper _mapper;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly XMLTaskDbContext _xMLTaskDbContext;
 
-        public Worker(ILogger<Worker> logger, RabbitMQService rabbitMQService, IMapper mapper, IServiceProvider serviceProvider)
+        public Worker(ILogger<Worker> logger, RabbitMQService rabbitMQService, IMapper mapper, XMLTaskDbContext xMLTaskDbContext)
         {
             _logger = logger;
             _rabbitMQService = rabbitMQService;
             _mapper = mapper;
-            _serviceProvider = serviceProvider;
+            _xMLTaskDbContext = xMLTaskDbContext;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -52,14 +52,11 @@ namespace XMLTask.DataProcessor
                 throw new Exception("InstrumentStatus cannot be null.");
             }
 
-            using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetService<XMLTaskDbContext>();
-
             _logger.LogInformation($"InstrumentStatus with PackageID = {instrumentStatus.PackageID} recieved.");
 
             var newInstrumentStatus = _mapper.Map<InstrumentStatus>(instrumentStatus);
 
-            var instrumentStatusFromDb = await dbContext.InstrumentStatuses
+            var instrumentStatusFromDb = await _xMLTaskDbContext.InstrumentStatuses
                 .Include(@is => @is.DeviceStatuses)
                 .ThenInclude(ds => ds.RapidControlStatus)
                 .ThenInclude(rcs => rcs.CombinedStatus)
@@ -67,7 +64,7 @@ namespace XMLTask.DataProcessor
 
             if (instrumentStatusFromDb == null)
             {
-                dbContext.InstrumentStatuses.Add(newInstrumentStatus);
+                _xMLTaskDbContext.InstrumentStatuses.Add(newInstrumentStatus);
                 _logger.LogInformation($"Added InstrumentStatus with PackageID = {instrumentStatus.PackageID}.");
             }
             else
@@ -76,7 +73,7 @@ namespace XMLTask.DataProcessor
                 _logger.LogInformation($"Updated ModuleStates for InstrumentStatus with PackageID = {instrumentStatus.PackageID}.");
             }
 
-            dbContext.SaveChanges();
+            _xMLTaskDbContext.SaveChanges();
         }
 
         private void updateInstrumentStatus(InstrumentStatus instrumentStatusDest, InstrumentStatus instrumentStatusSrc)

@@ -10,9 +10,9 @@ var parserConfiguration = builder.Configuration.GetSection(nameof(ParserConfigur
 builder.Services.AddHostedService<Worker>();
 builder.Services.Configure<ParserConfiguration>(parserConfiguration);
 builder.Services.Configure<RabbitMQConfiguration>(parserConfiguration.GetSection(nameof(RabbitMQConfiguration)));
-builder.Services.AddScoped<XMLInstrumentStatusSerializer>();
-builder.Services.AddScoped<XMLParserService>();
-builder.Services.AddScoped(sp => new RabbitMQService(sp.GetService<IOptions<RabbitMQConfiguration>>().Value));
+builder.Services.AddTransient<XMLInstrumentStatusSerializer>();
+builder.Services.AddTransient<XMLParserService>();
+builder.Services.AddTransient(sp => new RabbitMQService(sp.GetService<IOptions<RabbitMQConfiguration>>().Value));
 builder.Services.AddLogging(logging =>
     logging.AddSimpleConsole(options =>
     {
